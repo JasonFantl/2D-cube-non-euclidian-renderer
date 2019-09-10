@@ -8,31 +8,37 @@ class renderFace {
 
         this.cameraScreen = createGraphics(resolution, resolution);
         this.topView = createGraphics(map.length * 4, map[0].length * 4);
+
+        this.showFOV = false;
     }
 
     shootCamera(cam) {
         this.cameraScreen.background(100, 100, 100);
         for (let pixIndex = 0; pixIndex < this.cameraScreen.width; pixIndex++) {
 
+            //calculate direction of ray
             let cameraX = 2 * pixIndex / float(this.cameraScreen.width) - 1; //x-coordinate in camera space
             let rayDirX = cam.dirX + cam.planeX * cameraX;
             let rayDirY = cam.dirY + cam.planeY * cameraX;
 
-            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY, 0);
+            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY, 0, pixIndex);
 
             let drawStart = returnData[0];
             let drawEnd = returnData[1];
             let boxColor = returnData[2];
 
+
+            //Draw the line onto the canvas
             this.cameraScreen.strokeWeight(1);
-            // this.cameraScreen.stroke(30, 40, 100);
-            // this.cameraScreen.line(pixIndex, 0, pixIndex, drawStart);
             this.cameraScreen.stroke(boxColor.toP5Color());
             this.cameraScreen.line(pixIndex, drawStart, pixIndex, drawEnd);
         }
     }
 
-    shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled) {
+    shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled, pixIndex) {
+
+        let numOfRays = 30;
+        //Setup all the variables we need
 
         //which box of the map we're in
         let mapX = int(rayX);
@@ -45,6 +51,8 @@ class renderFace {
         //length of ray from one x or y-side to next x or y-side
         let deltaDistX = abs(1 / rayDirX);
         let deltaDistY = abs(1 / rayDirY);
+
+        //Number of boxs crossed
         let perpWallDist = null;
 
         //what direction to step in x or y-direction (either +1 or -1)
@@ -72,18 +80,14 @@ class renderFace {
             sideDistY = (mapY + 1.0 - rayY) * deltaDistY;
         }
 
-        let toEdgeX = sideDistX;
-        let toEdgeY = sideDistY;
-
         //perform DDA
         while (hit == 0) {
-            //stop rendering if out of render distance
+            //stop rendering if past render distance
             if (perpWallDist + disTravelled > cam.viewDis) {
-                let drawStart = -1;
-                let drawEnd = -1;
-                return [drawStart, drawEnd, new myColor(0, 0, 0)]
+                return [-1, -1, new myColor(0, 0, 0)]
             }
-            //jump to next map square, OR in x-direction, OR in y-direction
+
+            //jump to next map square in x-direction OR in y-direction
             if (sideDistX < sideDistY) {
                 sideDistX += deltaDistX;
                 mapX += stepX;
@@ -95,28 +99,48 @@ class renderFace {
             }
 
             //Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
+            //It calculates the number of boxs crossed
             if (side == 0) perpWallDist = (mapX - rayX + (1 - stepX) / 2) / rayDirX;
             else perpWallDist = (mapY - rayY + (1 - stepY) / 2) / rayDirY;
 
-                        //go to new map if weve hit the edge
-                        if (mapX < 0) {
-                            //change this to the new face later, for now it wraps around this map
-                            return this.shootRay(this.map.length, cam.posY + perpWallDist * rayDirY, rayDirX, rayDirY, disTravelled + perpWallDist)
-                        }
-                        if (mapY < 0) {
-                            //change this to the new face later, for now it wraps around this map
-                            return this.shootRay(cam.posX + perpWallDist * rayDirX, this.map[0].length, rayDirX, rayDirY, disTravelled + perpWallDist)
-                        }
-                        if (mapX >= this.map.length) {
-                            //change this to the new face later, for now it wraps around this map
-                            return this.shootRay(0, cam.posY + perpWallDist * rayDirY, rayDirX, rayDirY, disTravelled + perpWallDist)
-                        }
-                        if (mapY >= this.map[0].length) {
-                            //change this to the new face later, for now it wraps around this map
-                            return this.shootRay(cam.posX + perpWallDist * rayDirX, 0, rayDirX, rayDirY, disTravelled + perpWallDist)
-                        }
-                        //Check if ray has hit a wall
-                        if (this.map[mapX][mapY] > 0) hit = 1;
+            //Wrap the ray to always be inside the map
+            let hitRayX = rayX + perpWallDist * rayDirX;
+            let hitRayY = rayY + perpWallDist * rayDirY;
+            let totalDisTraveled = disTravelled + perpWallDist;
+            if (mapX < 0) {
+                if (this.showFOV && pixIndex % numOfRays == 0) {
+                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
+                }
+                return this.shootRay(this.map.length, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+            }
+            if (mapY < 0) {
+                if (this.showFOV && pixIndex % numOfRays == 0) {
+                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
+                }
+                return this.shootRay(hitRayX, this.map[0].length, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+            }
+            if (mapX >= this.map.length) {
+                if (this.showFOV && pixIndex % numOfRays == 0) {
+                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
+                }
+                return this.shootRay(0, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+            }
+            if (mapY >= this.map[0].length) {
+                if (this.showFOV && pixIndex % numOfRays == 0) {
+                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
+                }
+                return this.shootRay(hitRayX, 0, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+            }
+
+            //Check if ray has hit a wall
+            if (this.map[mapX][mapY] > 0) hit = 1;
+        }
+
+        
+        if (this.showFOV && pixIndex % numOfRays == 0) {
+            let hitRayX = rayX + perpWallDist * rayDirX;
+            let hitRayY = rayY + perpWallDist * rayDirY;
+            this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
         }
 
         perpWallDist = perpWallDist + disTravelled;
@@ -139,9 +163,31 @@ class renderFace {
         //give x and y sides different brightness
         if (side == 1) { boxColor.half(); }
 
+        //Ajust brightness based on distance
+        let fadeDis = 10;
+        if (perpWallDist > fadeDis) {
+            boxColor.div(perpWallDist / fadeDis)
+        }
+
         return [drawStart, drawEnd, boxColor]
     }
 
+    drawLineOnTop(rayX, rayY, hitRayX, hitRayY) {
+        let mapX = this.map.length;
+        let mapY = this.map[0].length;
+        let graphicsX = this.topView.width;
+        let graphicsY = this.topView.height;
+
+        let xFactor = float(graphicsX) / mapX;
+        let yFactor = float(graphicsY) / mapY;
+
+        this.topView.strokeWeight(0.5);
+        this.topView.stroke(250, 10, 10);
+
+        this.topView.line(rayX * xFactor, rayY * yFactor, hitRayX * xFactor, hitRayY * yFactor);
+    }
+
+    //Updates the top down view of the world
     update2D(cam) {
         let mapX = this.map.length;
         let mapY = this.map[0].length;
@@ -171,8 +217,6 @@ class renderFace {
         this.topView.circle(drawX, drawY, boxX / 2);
         this.topView.fill(color(200, 20, 200));
         this.topView.circle(drawX2, drawY2, boxX / 2);
-
-
     }
 }
 
