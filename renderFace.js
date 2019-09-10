@@ -18,7 +18,7 @@ class renderFace {
             let rayDirX = cam.dirX + cam.planeX * cameraX;
             let rayDirY = cam.dirY + cam.planeY * cameraX;
 
-            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY);
+            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY, 0);
 
             let drawStart = returnData[0];
             let drawEnd = returnData[1];
@@ -32,7 +32,7 @@ class renderFace {
         }
     }
 
-    shootRay(rayX, rayY, rayDirX, rayDirY) {
+    shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled) {
 
         //which box of the map we're in
         let mapX = int(rayX);
@@ -71,13 +71,14 @@ class renderFace {
             stepY = 1;
             sideDistY = (mapY + 1.0 - rayY) * deltaDistY;
         }
+
+        let toEdgeX = sideDistX;
+        let toEdgeY = sideDistY;
+
         //perform DDA
-        let viewDis = 15;
-
         while (hit == 0) {
-
-            //only render things withen the distance
-            if (perpWallDist > viewDis) {
+            //stop rendering if out of render distance
+            if (perpWallDist + disTravelled > cam.viewDis) {
                 let drawStart = -1;
                 let drawEnd = -1;
                 return [drawStart, drawEnd, new myColor(0, 0, 0)]
@@ -93,15 +94,32 @@ class renderFace {
                 side = 1;
             }
 
-            //Check if ray has hit a wall
-            if (this.map[mapX][mapY] > 0) hit = 1;
-
             //Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
             if (side == 0) perpWallDist = (mapX - rayX + (1 - stepX) / 2) / rayDirX;
             else perpWallDist = (mapY - rayY + (1 - stepY) / 2) / rayDirY;
 
+                        //go to new map if weve hit the edge
+                        if (mapX < 0) {
+                            //change this to the new face later, for now it wraps around this map
+                            return this.shootRay(this.map.length, cam.posY + perpWallDist * rayDirY, rayDirX, rayDirY, disTravelled + perpWallDist)
+                        }
+                        if (mapY < 0) {
+                            //change this to the new face later, for now it wraps around this map
+                            return this.shootRay(cam.posX + perpWallDist * rayDirX, this.map[0].length, rayDirX, rayDirY, disTravelled + perpWallDist)
+                        }
+                        if (mapX >= this.map.length) {
+                            //change this to the new face later, for now it wraps around this map
+                            return this.shootRay(0, cam.posY + perpWallDist * rayDirY, rayDirX, rayDirY, disTravelled + perpWallDist)
+                        }
+                        if (mapY >= this.map[0].length) {
+                            //change this to the new face later, for now it wraps around this map
+                            return this.shootRay(cam.posX + perpWallDist * rayDirX, 0, rayDirX, rayDirY, disTravelled + perpWallDist)
+                        }
+                        //Check if ray has hit a wall
+                        if (this.map[mapX][mapY] > 0) hit = 1;
         }
 
+        perpWallDist = perpWallDist + disTravelled;
 
         let h = this.cameraScreen.height;
         //Calculate height of line to draw on screen
