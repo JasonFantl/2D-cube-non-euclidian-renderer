@@ -10,6 +10,7 @@ class renderFace {
         this.topView = createGraphics(map.length * 4, map[0].length * 4);
 
         this.showFOV = false;
+        this.numOfRays = 30;
     }
 
     shootCamera(cam) {
@@ -37,7 +38,8 @@ class renderFace {
 
     shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled, pixIndex) {
 
-        let numOfRays = 30;
+        let totalDisTraveled = disTravelled;
+
         //Setup all the variables we need
 
         //which box of the map we're in
@@ -83,7 +85,7 @@ class renderFace {
         //perform DDA
         while (hit == 0) {
             //stop rendering if past render distance
-            if (perpWallDist + disTravelled > cam.viewDis) {
+            if (totalDisTraveled > cam.viewDis) {
                 return [-1, -1, new myColor(0, 0, 0)]
             }
 
@@ -103,30 +105,32 @@ class renderFace {
             if (side == 0) perpWallDist = (mapX - rayX + (1 - stepX) / 2) / rayDirX;
             else perpWallDist = (mapY - rayY + (1 - stepY) / 2) / rayDirY;
 
+            totalDisTraveled = perpWallDist + disTravelled;
+
             //Wrap the ray to always be inside the map
             let hitRayX = rayX + perpWallDist * rayDirX;
             let hitRayY = rayY + perpWallDist * rayDirY;
-            let totalDisTraveled = disTravelled + perpWallDist;
+
             if (mapX < 0) {
-                if (this.showFOV && pixIndex % numOfRays == 0) {
+                if (this.showFOV && pixIndex %this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
                 return this.shootRay(this.map.length, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
             }
             if (mapY < 0) {
-                if (this.showFOV && pixIndex % numOfRays == 0) {
+                if (this.showFOV && pixIndex %this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
                 return this.shootRay(hitRayX, this.map[0].length, rayDirX, rayDirY, totalDisTraveled, pixIndex)
             }
             if (mapX >= this.map.length) {
-                if (this.showFOV && pixIndex % numOfRays == 0) {
+                if (this.showFOV && pixIndex %this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
                 return this.shootRay(0, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
             }
             if (mapY >= this.map[0].length) {
-                if (this.showFOV && pixIndex % numOfRays == 0) {
+                if (this.showFOV && pixIndex %this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
                 return this.shootRay(hitRayX, 0, rayDirX, rayDirY, totalDisTraveled, pixIndex)
@@ -136,18 +140,18 @@ class renderFace {
             if (this.map[mapX][mapY] > 0) hit = 1;
         }
 
-        
-        if (this.showFOV && pixIndex % numOfRays == 0) {
+        //draw ray on top view        
+        if (this.showFOV && pixIndex %this.numOfRays == 0) {
             let hitRayX = rayX + perpWallDist * rayDirX;
             let hitRayY = rayY + perpWallDist * rayDirY;
             this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
         }
 
-        perpWallDist = perpWallDist + disTravelled;
+        totalDisTraveled = perpWallDist + disTravelled;
 
         let h = this.cameraScreen.height;
         //Calculate height of line to draw on screen
-        let lineHeight = (int)(h / perpWallDist);
+        let lineHeight = (int)(h / totalDisTraveled);
 
 
         //calculate lowest and highest pixel to fill in current stripe
@@ -165,8 +169,8 @@ class renderFace {
 
         //Ajust brightness based on distance
         let fadeDis = 10;
-        if (perpWallDist > fadeDis) {
-            boxColor.div(perpWallDist / fadeDis)
+        if (totalDisTraveled > fadeDis) {
+            boxColor.div(totalDisTraveled / fadeDis)
         }
 
         return [drawStart, drawEnd, boxColor]
@@ -181,7 +185,7 @@ class renderFace {
         let xFactor = float(graphicsX) / mapX;
         let yFactor = float(graphicsY) / mapY;
 
-        this.topView.strokeWeight(0.5);
+        this.topView.strokeWeight(this.numOfRays/100);
         this.topView.stroke(250, 10, 10);
 
         this.topView.line(rayX * xFactor, rayY * yFactor, hitRayX * xFactor, hitRayY * yFactor);
