@@ -1,3 +1,3 @@
 Current bugs in the system include:
 
-When a ray is shot into an x side then y side, it renders wrong
+If you go backwards immediatly, max stack call error

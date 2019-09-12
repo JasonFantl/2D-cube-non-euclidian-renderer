@@ -5,11 +5,12 @@ class renderFace {
         this.map = map
         this.ID = ID
         this.Top, this.Bottom, this.Left, this.Right = null
+        this.toTop, this.toBottom, this.toLeft, this.toRight = null
 
         this.cameraScreen = createGraphics(resolution, resolution);
         this.topView = createGraphics(map.length * 4, map[0].length * 4);
 
-        this.showFOV = false;
+        this.showFOV = true;
         this.numOfRays = 30;
     }
 
@@ -110,30 +111,26 @@ class renderFace {
             //Wrap the ray to always be inside the map
             let hitRayX = rayX + perpWallDist * rayDirX;
             let hitRayY = rayY + perpWallDist * rayDirY;
-
+            let newCords;
+            let hitFace = null;
             if (mapX < 0) {
-                if (this.showFOV && pixIndex %this.numOfRays == 0) {
-                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
-                }
-                return this.shootRay(this.map.length, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+                hitFace = this.Left;
+                newCords = this.toLeft(hitRayX, hitRayY, rayDirX, rayDirY);
+            } else if (mapY < 0) {
+                hitFace = this.Bottom;
+                newCords = this.toBottom(hitRayX, hitRayY, rayDirX, rayDirY);
+            } else if (mapX >= this.map.length) {
+                hitFace = this.Right;
+                newCords = this.toRight(hitRayX, hitRayY, rayDirX, rayDirY);
+            } else if (mapY >= this.map[0].length) {
+                hitFace = this.Top;
+                newCords = this.toTop(hitRayX, hitRayY, rayDirX, rayDirY);
             }
-            if (mapY < 0) {
-                if (this.showFOV && pixIndex %this.numOfRays == 0) {
+            if (hitFace) {
+                if (this.showFOV && pixIndex % this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
-                return this.shootRay(hitRayX, this.map[0].length, rayDirX, rayDirY, totalDisTraveled, pixIndex)
-            }
-            if (mapX >= this.map.length) {
-                if (this.showFOV && pixIndex %this.numOfRays == 0) {
-                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
-                }
-                return this.shootRay(0, hitRayY, rayDirX, rayDirY, totalDisTraveled, pixIndex)
-            }
-            if (mapY >= this.map[0].length) {
-                if (this.showFOV && pixIndex %this.numOfRays == 0) {
-                    this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
-                }
-                return this.shootRay(hitRayX, 0, rayDirX, rayDirY, totalDisTraveled, pixIndex)
+                return hitFace.shootRay(newCords[0], newCords[1], newCords[2], newCords[3], totalDisTraveled, pixIndex);
             }
 
             //Check if ray has hit a wall
@@ -141,7 +138,7 @@ class renderFace {
         }
 
         //draw ray on top view        
-        if (this.showFOV && pixIndex %this.numOfRays == 0) {
+        if (this.showFOV && pixIndex % this.numOfRays == 0) {
             let hitRayX = rayX + perpWallDist * rayDirX;
             let hitRayY = rayY + perpWallDist * rayDirY;
             this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
@@ -185,7 +182,7 @@ class renderFace {
         let xFactor = float(graphicsX) / mapX;
         let yFactor = float(graphicsY) / mapY;
 
-        this.topView.strokeWeight(this.numOfRays/100);
+        this.topView.strokeWeight(this.numOfRays / 100);
         this.topView.stroke(250, 10, 10);
 
         this.topView.line(rayX * xFactor, rayY * yFactor, hitRayX * xFactor, hitRayY * yFactor);
