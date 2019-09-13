@@ -18,12 +18,16 @@ class camera {
     this.dirY = 0;
     this.planeX = 0;
     this.planeY = 0.66;
-    this.viewDis = 200;
+    this.viewDis = 100;
+  }
+
+  getViewDis() {
+    return viewSlider.value();
   }
 }
 
 
-let heightUpCoefficient, heightDownCoefficient = null;
+let heightUpCoefficient, heightDownCoefficient, viewSlider = null;
 
 function setup() {
   createCanvas(500, 500);
@@ -34,27 +38,25 @@ function setup() {
 
   heightUpCoefficient = createSlider(-1, 4, 1, 0.01);
   heightDownCoefficient = createSlider(-1, 4, 1, 0.01);
+  viewSlider = createSlider(3, 100, 80, 1);
 
-  let flipX = (map, x) => (map.length + x);
-  let flipY = (map, y) => (map[0].length + y);
-
-  face1.Top = face2;
-  face1.toTop = (x, y, xd, yd) => [x, 0, xd, yd];
-  face1.Bottom = face2;
-  face1.toBottom = (x, y, xd, yd) => [x, flipY(face2.Bottom.map, y), xd, yd];
-  face1.Left = face2;
-  face1.toLeft = (x, y, xd, yd) => [flipX(face1.Left.map, x), y, xd, yd];
-  face1.Right = face2;
-  face1.toRight = (x, y, xd, yd) => [0, y, xd, yd];
+  face1.Top = face1;
+  face1.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
+  face1.Bottom = face1;
+  face1.toBottom = (x, y, xd, yd) => [x, face1.Bottom.map.length-1, xd, yd];
+  face1.Left = face1;
+  face1.toLeft = (x, y, xd, yd) => [face1.Left.map.length-1, y, xd, yd];
+  face1.Right = face1;
+  face1.toRight = (x, y, xd, yd) => [1, y, xd, yd];
 
   face2.Top = face1;
-  face2.toTop = (x, y, xd, yd) => [x, 0, xd, yd];
+  face2.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
   face2.Bottom = face1;
-  face2.toBottom = (x, y, xd, yd) => [x, flipY(face2.Bottom.map, y), xd, yd];
+  face2.toBottom = (x, y, xd, yd) => [x, face2.Bottom.map.length - 1, xd, yd];
   face2.Left = face1;
-  face2.toLeft = (x, y, xd, yd) => [flipX(face2.Left.map, x), y, xd, yd];
+  face2.toLeft = (x, y, xd, yd) => [face2.Left.map.length - 1, y, xd, yd];
   face2.Right = face1;
-  face2.toRight = (x, y, xd, yd) => [0, y, xd, yd];
+  face2.toRight = (x, y, xd, yd) => [1, y, xd, yd];
 }
 
 function draw() {
@@ -101,18 +103,22 @@ function updateCamPos(newX, newY) {
 
   let hitFace = cam.face;
   if (newX < 0) {
+    console.log("left");
     hitFace = cam.face.Left;
     newCords = cam.face.toLeft(newX, newY, 0, 0);
   }
   else if (newX >= cam.face.map.length) {
+    console.log("right");
     hitFace = cam.face.Right;
     newCords = cam.face.toRight(newX, newY, 0, 0);
   }
   else if (newY < 0) {
+    console.log("bottom");
     hitFace = cam.face.Bottom;
     newCords = cam.face.toBottom(newX, newY, 0, 0);
   }
   else if (newY >= cam.face.map[0].length) {
+    console.log("top");
     hitFace = cam.face.Top;
     newCords = cam.face.toTop(newX, newY, 0, 0);
   }

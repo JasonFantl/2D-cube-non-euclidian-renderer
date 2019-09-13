@@ -86,7 +86,7 @@ class renderFace {
         //perform DDA
         while (hit == 0) {
             //stop rendering if past render distance
-            if (totalDisTraveled > cam.viewDis) {
+            if (totalDisTraveled > cam.getViewDis()) {
                 return [-1, -1, new myColor(0, 0, 0)]
             }
 
