@@ -2,6 +2,7 @@ const mod = (x, n) => (x % n + n) % n;
 
 let face1 = null;
 let face2 = null;
+let face3 = null;
 
 let cam = null;
 
@@ -11,7 +12,7 @@ const rotSpeed = 0.08;
 
 class camera {
   constructor() {
-    this.face = face1;
+    this.face = face3;
     this.posX = 22;
     this.posY = 12;
     this.dirX = -1;
@@ -19,6 +20,12 @@ class camera {
     this.planeX = 0;
     this.planeY = 0.66;
     this.viewDis = 100;
+  }
+
+  setPos(x, y) {
+    this.posX = x;
+    this.posY = y;
+    //console.log("change in pos to ", this.posY, this.posX);
   }
 
   getViewDis() {
@@ -33,6 +40,7 @@ function setup() {
   createCanvas(500, 500);
   face1 = new renderFace(1, map1);
   face2 = new renderFace(2, map2);
+  face3 = new renderFace(3, map5);
 
   cam = new camera();
 
@@ -40,14 +48,14 @@ function setup() {
   heightDownCoefficient = createSlider(-1, 4, 1, 0.01);
   viewSlider = createSlider(3, 100, 80, 1);
 
-  face1.Top = face1;
-  face1.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
-  face1.Bottom = face1;
-  face1.toBottom = (x, y, xd, yd) => [x, face1.Bottom.map.length-1, xd, yd];
-  face1.Left = face1;
-  face1.toLeft = (x, y, xd, yd) => [face1.Left.map.length-1, y, xd, yd];
-  face1.Right = face1;
-  face1.toRight = (x, y, xd, yd) => [1, y, xd, yd];
+  face3.Top = face3;
+  face3.toTop = (x, y, xd, yd) => [face3.Right.map.length - 1, x, -yd, xd];
+  face3.Bottom = face3;
+  face3.toBottom = (x, y, xd, yd) => [1, x, -yd, xd];
+  face3.Left = face3;
+  face3.toLeft = (x, y, xd, yd) => [y, 1, yd, -xd];
+  face3.Right = face3;
+  face3.toRight = (x, y, xd, yd) => [y, face3.Top.map[0].length - 1, yd, -xd];
 
   face2.Top = face1;
   face2.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
@@ -60,7 +68,7 @@ function setup() {
 }
 
 function draw() {
-  updatePosition();
+  checkKeyboardInput();
   background(0)
   cam.face.update2D(cam);
   cam.face.shootCamera(cam);
@@ -75,15 +83,17 @@ function draw() {
   image(cam.face.topView, width - topViewDelta, 0, topViewDelta, topViewDelta);
   pop();
 
+  //text(nf(cam.posX, 2, 2) + " " + nf(cam.posY, 2, 2), width / 4, height / 4);
+
 }
 
-function updatePosition() {
+function checkKeyboardInput() {
   if (keyIsPressed) {
     if (keyIsDown(LEFT_ARROW)) {
-      updateCamRot(1);
+      updateCamRot(rotSpeed);
     }
     if (keyIsDown(RIGHT_ARROW)) {
-      updateCamRot(-1);
+      updateCamRot(-rotSpeed);
     }
     if (keyIsDown(UP_ARROW)) {
       let newX = cam.posX + cam.dirX * moveSpeed;
@@ -99,65 +109,90 @@ function updatePosition() {
 }
 
 function updateCamPos(newX, newY) {
-  let newCords = [newX, newY];
 
-  let hitFace = cam.face;
-  if (newX < 0) {
-    console.log("left");
-    hitFace = cam.face.Left;
-    newCords = cam.face.toLeft(newX, newY, 0, 0);
-  }
-  else if (newX >= cam.face.map.length) {
-    console.log("right");
-    hitFace = cam.face.Right;
-    newCords = cam.face.toRight(newX, newY, 0, 0);
-  }
-  else if (newY < 0) {
-    console.log("bottom");
-    hitFace = cam.face.Bottom;
-    newCords = cam.face.toBottom(newX, newY, 0, 0);
-  }
-  else if (newY >= cam.face.map[0].length) {
-    console.log("top");
-    hitFace = cam.face.Top;
-    newCords = cam.face.toTop(newX, newY, 0, 0);
-  }
+  //check if we've hit an edge
+  let didWarp = doWarp(newX, newY);
 
-  let canGoX = false;
-  let canGoY = false;
+  if (!didWarp) {
+    let nextStepX = cam.posX;
+    let nextStepY = cam.posY;
 
-  if (hitFace.map[int(newCords[0])][int(cam.posY)] == 0) {
-    canGoX = true;
-    cam.face = hitFace;
-  }
-  if (hitFace.map[int(cam.posX)][int(newCords[1])] == 0) {
-    canGoY = true;
-    cam.face = hitFace;
-  }
-  if (canGoX) {
-    cam.posX = newCords[0];
-  }
-  if (canGoY) {
-    cam.posY = newCords[1];
+    if (cam.face.map[int(newX)][int(cam.posY)] == 0) {
+      nextStepX = newX;
+    }
+    if (cam.face.map[int(cam.posX)][int(newY)] == 0) {
+      nextStepY = newY;
+    }
+
+    if (nextStepX != cam.posX || nextStepY != cam.posY) {
+      cam.setPos(nextStepX, nextStepY);
+    }
   }
 }
 
 
-function updateCamRot(direction) {
+function updateCamRot(rotAngle) {
   let oldDirX = cam.dirX;
-  cam.dirX = cam.dirX * cos(direction * rotSpeed) - cam.dirY * sin(direction * rotSpeed);
-  cam.dirY = oldDirX * sin(direction * rotSpeed) + cam.dirY * cos(direction * rotSpeed);
+  cam.dirX = cam.dirX * cos(rotAngle) - cam.dirY * sin(rotAngle);
+  cam.dirY = oldDirX * sin(rotAngle) + cam.dirY * cos(rotAngle);
   let oldPlaneX = cam.planeX;
-  cam.planeX = cam.planeX * cos(direction * rotSpeed) - cam.planeY * sin(direction * rotSpeed);
-  cam.planeY = oldPlaneX * sin(direction * rotSpeed) + cam.planeY * cos(direction * rotSpeed);
+  cam.planeX = cam.planeX * cos(rotAngle) - cam.planeY * sin(rotAngle);
+  cam.planeY = oldPlaneX * sin(rotAngle) + cam.planeY * cos(rotAngle);
 }
+
+
+function doWarp(x, y) {
+
+  //if no need to warp, return false
+  if (x >= 0 && x < cam.face.map.length && y >= 0 && y <= cam.face.map[0].length) {
+    return false;
+  }
+
+  //otherwise get the transformation function and new face
+  let newFace = null;
+  let faceTransformation = null;
+
+  if (x < 0) {
+    newFace = cam.face.Left;
+    faceTransformation = cam.face.toLeft;
+  }
+  else if (x >= cam.face.map.length) {
+    newFace = cam.face.Right;
+    faceTransformation = cam.face.toRight;
+  }
+  else if (y < 0) {
+    newFace = cam.face.Bottom;
+    faceTransformation = cam.face.toBottom;
+  }
+  else if (y >= cam.face.map[0].length) {
+    newFace = cam.face.Top;
+    faceTransformation = cam.face.toTop;
+  }
+
+  //update everything
+  cam.face = newFace;
+  newCords = faceTransformation(x, y, cam.dirX, cam.dirY);
+  cam.setPos(newCords[0], newCords[1]);
+
+  //angle is a bit complicated
+  let deltaAngle = Math.acos(cam.dirX * newCords[2] + cam.dirY * newCords[3]);
+  //dAngleDir has its sign depending on if its left or right
+  let dAngleDir = cam.dirX * (-newCords[3]) + cam.dirY * newCords[2];
+  if (dAngleDir > 0) {
+    deltaAngle *= -1;
+  }
+  updateCamRot(deltaAngle);
+
+  return true;
+}
+
 
 function colorMap(data) {
   switch (data) {
-    case 1: return new myColor(10, 10, 10); break; //red
-    case 2: return new myColor(10, 200, 250); break; //green
-    case 3: return new myColor(250, 10, 20); break; //blue
-    case 4: return new myColor(10, 250, 20); break; //white
-    default: return new myColor(255, 255, 255); break; //yellow
+    case 1: return new myColor(200, 200, 100); break; //yellow
+    case 2: return new myColor(10, 200, 250); break; //blue
+    case 3: return new myColor(250, 10, 20); break; //red
+    case 4: return new myColor(10, 250, 20); break; //green
+    default: return new myColor(230, 235, 235); break; //white
   }
 }
