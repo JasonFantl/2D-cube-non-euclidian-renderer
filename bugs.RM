@@ -1,6 +1,57 @@
 Current bugs in the system include:
 
-Face the top from the top left of the red almost box and move forward
-his also happpens to the bottom right corner
-If you withen a couple blocks of the corner from either side, theres a chance youll get thown into that corner
-Its something with the moving, because rays are correct
+
+
+face1.Top = face2;
+  face1.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
+  face1.Bottom = face5;
+  face1.toBottom = (x, y, xd, yd) => [x, 24, xd, yd];
+  face1.Left = face4;
+  face1.toLeft = (x, y, xd, yd) => [24, y, xd, yd];
+  face1.Right = face3;
+  face1.toRight = (x, y, xd, yd) => [1, y, xd, yd];
+
+  face2.Top = face6;
+  face2.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
+  face2.Bottom = face1;
+  face2.toBottom = (x, y, xd, yd) => [x, mapSize - 1, xd, yd];
+  face2.Left = face4;
+  face2.toLeft = (x, y, xd, yd) => [mapSize - 1, mapSize - 1, -yd, xd];
+  face2.Right = face3;
+  face2.toRight = (x, y, xd, yd) => [y, mapSize - 1, -yd, xd];
+
+  face3.Top = face2;
+  face3.toTop = (x, y, xd, yd) => [mapSize - 1, x, -yd, xd];
+  face3.Bottom = face5;
+  face3.toBottom = (x, y, xd, yd) => [mapSize, mapSize - x, -yd, -xd];
+  face3.Left = face1;
+  face3.toLeft = (x, y, xd, yd) => [mapSize - 1, y, xd, yd];
+  face3.Right = face6;
+  face3.toRight = (x, y, xd, yd) => [mapSize - 1, mapSize - y, -xd, -yd];
+
+  face4.Top = face2;
+  face4.toTop = (x, y, xd, yd) => [1, mapSize - x, yd, -xd];
+  face4.Bottom = face5;
+  face4.toBottom = (x, y, xd, yd) => [1, x, -yd, xd];
+  face4.Left = face6;
+  face4.toLeft = (x, y, xd, yd) => [1, mapSize - y, -xd, -yd];
+  face4.Right = face1;
+  face4.toRight = (x, y, xd, yd) => [1, y, xd, yd];
+
+  face5.Top = face1;
+  face5.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
+  face5.Bottom = face6;
+  face5.toBottom = (x, y, xd, yd) => [x, 24, xd, yd];
+  face5.Left = face4;
+  face5.toLeft = (x, y, xd, yd) => [y, 1, yd, -xd];
+  face5.Right = face3;
+  face5.toRight = (x, y, xd, yd) => [mapSize - y, 1, -yd, xd];
+
+  face6.Top = face5;
+  face6.toTop = (x, y, xd, yd) => [x, 1, xd, yd];
+  face6.Bottom = face2;
+  face6.toBottom = (x, y, xd, yd) => [x, 24, xd, yd];
+  face6.Left = face4;
+  face6.toLeft = (x, y, xd, yd) => [1, x, -yd, xd];
+  face6.Right = face3;
+  face6.toRight = (x, y, xd, yd) => [mapSize - 1, mapSize - y, -xd, -yd];
