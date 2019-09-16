@@ -23,7 +23,7 @@ class renderFace {
             let rayDirX = cam.dirX + cam.planeX * cameraX;
             let rayDirY = cam.dirY + cam.planeY * cameraX;
 
-            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY, 0, pixIndex);
+            let returnData = this.shootRay(cam.posX, cam.posY, rayDirX, rayDirY, 0, pixIndex, 0);
 
             let drawStart = returnData[0];
             let drawEnd = returnData[1];
@@ -37,7 +37,11 @@ class renderFace {
         }
     }
 
-    shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled, pixIndex) {
+    shootRay(rayX, rayY, rayDirX, rayDirY, disTravelled, pixIndex, blocksTransversed) {
+
+        if (blocksTransversed > 100) { //just incase of recursion error
+            return [1, 110, new myColor(0, 0, 0)];
+        }
 
         let totalDisTraveled = disTravelled;
 
@@ -130,7 +134,7 @@ class renderFace {
                 if (this.showFOV && pixIndex % this.numOfRays == 0) {
                     this.drawLineOnTop(rayX, rayY, hitRayX, hitRayY);
                 }
-                return hitFace.shootRay(newCords[0], newCords[1], newCords[2], newCords[3], totalDisTraveled, pixIndex);
+                return hitFace.shootRay(newCords[0], newCords[1], newCords[2], newCords[3], totalDisTraveled, pixIndex, blocksTransversed + 1);
             }
 
             //Check if ray has hit a wall
@@ -209,6 +213,8 @@ class renderFace {
             }
         }
 
+
+        if(cam.face.ID == this.ID) {
         let drawX = cam.posX / mapX * graphicsX;
         let drawY = cam.posY / mapY * graphicsY;
         let drawX2 = drawX + cam.dirX;
@@ -218,6 +224,9 @@ class renderFace {
         this.topView.circle(drawX, drawY, boxX / 2);
         this.topView.fill(color(200, 20, 200));
         this.topView.circle(drawX2, drawY2, boxX / 2);
+
+        this.topView.circle(0, 0, 10);
+        }
     }
 }
 
