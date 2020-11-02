@@ -156,9 +156,11 @@ class renderFace {
 
 
         //calculate lowest and highest pixel to fill in current stripe
-        let drawStart = (-lineHeight * heightUpCoefficient.value() / 2 + h / 2);
+        let heightUpCoefficient = 1;
+        let heightDownCoefficient = 1;
+        let drawStart = (-lineHeight * heightUpCoefficient / 2 + h / 2);
         if (drawStart < 0) drawStart = 0;
-        let drawEnd = (lineHeight * heightDownCoefficient.value() / 2 + h / 2);
+        let drawEnd = (lineHeight * heightDownCoefficient / 2 + h / 2);
         if (drawEnd >= h) drawEnd = h - 1;
 
         //choose wall color

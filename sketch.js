@@ -37,12 +37,10 @@ class camera {
   }
 
   getViewDis() {
-    return viewSlider.value();
+    return 100;
   }
 }
 
-
-let heightUpCoefficient, heightDownCoefficient, viewSlider = null;
 
 function setup() {
   createCanvas(500, 500);
@@ -56,10 +54,6 @@ function setup() {
   cam = new camera();
 
   cubeView = createGraphics(resolution, resolution, WEBGL);
-
-  heightUpCoefficient = createSlider(-1, 4, 1, 0.01);
-  heightDownCoefficient = createSlider(-1, 4, 1, 0.01);
-  viewSlider = createSlider(3, 100, 80, 1);
 
   generateAllFaceConnections();
 }
